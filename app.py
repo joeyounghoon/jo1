@@ -43,27 +43,29 @@ def chatbot(user_input, openai_api_key):
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 저장한 메시지 사용자/응답 구분해서 보여주기
+# Streamlit UI
+st.title("LLM 기반 챗봇")
+
+openai_api_key = st.text_input("Enter your OpenAI API Key", type="password")
+
+if openai_api_key:
+    user_prompt = st.chat_input("질문을 입력하세요")
+
+    if user_prompt:
+        # 사용자 메시지 저장 및 표시
+        st.session_state.messages.append({"role": "user", "content": user_prompt})
+        with st.chat_message("user"):
+            st.markdown(user_prompt)
+        
+        # OpenAI API를 통한 응답 생성
+        chatbot_response = chatbot(user_prompt, openai_api_key)
+        
+        # 챗봇 응답 저장 및 표시
+        st.session_state.messages.append({"role": "assistant", "content": chatbot_response})
+        with st.chat_message("assistant"):
+            st.markdown(chatbot_response)
+
+# 저장된 메시지를 순회하면서 표시
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
-
-# 사용자 입력과 LLM 응답
-if prompt := st.chat_input("What is up?"):
-    # 사용자 메시지 보여주기
-    st.chat_message("user").markdown(prompt)
-    # 메모리에 사용자 메시지 저장
-    st.session_state.messages.append({"role": "user", "content": prompt})
-
-    # OpenAI API를 통한 응답 생성
-    openai_api_key = st.text_input("Enter your OpenAI API Key", type="password", key="api_key")
-    if openai_api_key:
-        response = chatbot(prompt, openai_api_key)
-    else:
-        response = "API Key가 필요합니다."
-
-    # LLM 응답 보여주기
-    with st.chat_message("assistant"):
-        st.markdown(response)
-    # 메모리에 LLM 응답 저장
-    st.session_state.messages.append({"role": "assistant", "content": response})
