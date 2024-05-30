@@ -50,17 +50,24 @@ if openai_api_key:
 
     # Create Assistant and Thread if not already created
     if st.session_state.assistant_id is None or st.session_state.thread_id is None:
-        assistant = client.beta.assistants.create(
-            name="데이터 분석 전문가",
-            description="당신은 데이터 분석 전문가입니다.",
-            model="gpt-4-turbo-preview",
-        )
-        st.session_state.assistant_id = assistant.id
-        thread = client.beta.threads.create(
-            assistant_id=assistant.id,
-            messages=[]
-        )
-        st.session_state.thread_id = thread.id
+        try:
+            assistant = client.beta.assistants.create(
+                name="데이터 분석 전문가",
+                description="당신은 데이터 분석 전문가입니다.",
+                model="gpt-4-turbo-preview",
+            )
+            st.session_state.assistant_id = assistant.id
+        except Exception as e:
+            st.error(f"Error creating assistant: {e}")
+        
+        try:
+            thread = client.beta.threads.create(
+                assistant_id=st.session_state.assistant_id,
+                messages=[]
+            )
+            st.session_state.thread_id = thread.id
+        except Exception as e:
+            st.error(f"Error creating thread: {e}")
 
     # Display stored messages
     for msg in st.session_state.messages:
@@ -91,18 +98,21 @@ if openai_api_key:
                 client.beta.threads.delete(thread_id=st.session_state.thread_id)
             except Exception as e:
                 st.error(f"Error deleting thread: {e}")
-        assistant = client.beta.assistants.create(
-            name="데이터 분석 전문가",
-            description="당신은 데이터 분석 전문가입니다.",
-            model="gpt-4-turbo-preview",
-        )
-        thread = client.beta.threads.create(
-            assistant_id=assistant.id,
-            messages=[]
-        )
-        st.session_state.assistant_id = assistant.id
-        st.session_state.thread_id = thread.id
-        st.session_state.messages = []
+        try:
+            assistant = client.beta.assistants.create(
+                name="데이터 분석 전문가",
+                description="당신은 데이터 분석 전문가입니다.",
+                model="gpt-4-turbo-preview",
+            )
+            thread = client.beta.threads.create(
+                assistant_id=assistant.id,
+                messages=[]
+            )
+            st.session_state.assistant_id = assistant.id
+            st.session_state.thread_id = thread.id
+            st.session_state.messages = []
+        except Exception as e:
+            st.error(f"Error creating new assistant or thread: {e}")
 
     # Exit Chat button
     if st.button("Exit Chat"):
