@@ -49,7 +49,7 @@ if openai_api_key:
         st.session_state.thread_id = None
 
     # Create Assistant and Thread if not already created
-    if st.session_state.assistant_id is None or st.session_state.thread_id is None:
+    if st.session_state.assistant_id is None:
         try:
             assistant = client.beta.assistants.create(
                 name="데이터 분석 전문가",
@@ -59,11 +59,16 @@ if openai_api_key:
             st.session_state.assistant_id = assistant.id
         except Exception as e:
             st.error(f"Error creating assistant: {e}")
-        
+
+    if st.session_state.thread_id is None and st.session_state.assistant_id is not None:
         try:
             thread = client.beta.threads.create(
-                assistant_id=st.session_state.assistant_id,
-                messages=[]
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "초기화된 스레드"
+                    }
+                ]
             )
             st.session_state.thread_id = thread.id
         except Exception as e:
@@ -105,8 +110,12 @@ if openai_api_key:
                 model="gpt-4-turbo-preview",
             )
             thread = client.beta.threads.create(
-                assistant_id=assistant.id,
-                messages=[]
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "초기화된 스레드"
+                    }
+                ]
             )
             st.session_state.assistant_id = assistant.id
             st.session_state.thread_id = thread.id
