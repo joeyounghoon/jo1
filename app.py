@@ -6,11 +6,14 @@ import requests
 
 # 함수: OpenAI API 호출을 통한 텍스트 응답 생성
 @st.cache_data
-def get_openai_text_response(api_key, messages):
+def get_openai_text_response(api_key, prompt):
     openai.api_key = api_key
     response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=messages
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt}
+        ]
     )
     return response.choices[0].message['content']
 
@@ -34,50 +37,27 @@ if 'text_prompt' not in st.session_state:
     st.session_state.text_prompt = ''
 if 'image_prompt' not in st.session_state:
     st.session_state.image_prompt = ''
-if 'messages' not in st.session_state:
-    st.session_state.messages = []
 
 # API Key 입력
 st.sidebar.title("Settings")
 st.session_state.api_key = st.sidebar.text_input("Enter your OpenAI API Key", type="password", value=st.session_state.api_key)
 
 # 페이지 선택
-page = st.sidebar.selectbox("Select a Page", ["Chat with GPT-4", "Generate Image with Dall-E"])
+page = st.sidebar.selectbox("Select a Page", ["Chat with GPT-3.5", "Generate Image with Dall-E"])
 
-if page == "Chat with GPT-4":
-    st.title("GPT-4 Chatbot")
-
-    # 사용자 입력
-    user_input = st.text_input("Enter your message:")
-
+if page == "Chat with GPT-3.5":
+    st.title("GPT-3.5 Turbo Chatbot")
+    
+    # 질문 입력
+    st.session_state.text_prompt = st.text_area("Enter your question:", value=st.session_state.text_prompt)
+    
     # 응답 표시
-    if st.button("Send"):
-        if st.session_state.api_key and user_input:
-            # 사용자 메시지를 Thread에 추가
-            st.session_state.messages.append({"role": "user", "content": user_input})
-            response = get_openai_text_response(st.session_state.api_key, st.session_state.messages)
-            # Assistant 메시지를 Thread에 추가
-            st.session_state.messages.append({"role": "assistant", "content": response})
-            st.text_area("Assistant Response:", value=response, height=200)
+    if st.button("Get Response"):
+        if st.session_state.api_key and st.session_state.text_prompt:
+            response = get_openai_text_response(st.session_state.api_key, st.session_state.text_prompt)
+            st.text_area("Response:", value=response, height=200)
         else:
-            st.error("Please enter both the API Key and a message.")
-
-    # Clear 버튼: 기존 Thread 삭제 후 새로운 Thread 생성
-    if st.button("Clear"):
-        st.session_state.messages = []
-
-    # 대화창 나가기 버튼: Thread, Assistant 삭제
-    if st.button("Exit"):
-        st.session_state.api_key = ''
-        st.session_state.messages = []
-        st.experimental_rerun()
-
-    # 메시지 로그 표시
-    if st.session_state.messages:
-        st.subheader("Conversation Log")
-        for message in st.session_state.messages:
-            role = "User" if message['role'] == "user" else "Assistant"
-            st.markdown(f"**{role}:** {message['content']}")
+            st.error("Please enter both the API Key and a question.")
 
 elif page == "Generate Image with Dall-E":
     st.title("Dall-E Image Generator")
